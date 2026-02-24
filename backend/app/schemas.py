@@ -73,11 +73,11 @@ class AdminLoginOut(BaseModel):
     
 class PredictionOut(BaseModel):
     transaction_id: str
+    status: str
     fraud_score: Optional[float] = None
     fraud_label: Optional[bool] = None
     model_version: Optional[str] = None
     prediction_time: Optional[datetime] = None
-    status: str
     decision_source: str
 
     model_config = {

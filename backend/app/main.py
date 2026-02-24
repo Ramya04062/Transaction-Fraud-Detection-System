@@ -161,11 +161,11 @@ def ingest_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
     # 6️⃣ Response
     return PredictionOut(
         transaction_id=db_tx.transaction_id,
+        status="BLOCKED" if fraud_label else "APPROVED",
         fraud_score=fraud_score,
         fraud_label=fraud_label,
         model_version=model_server.version,
         prediction_time=db_tx.prediction_time,
-        status=db_tx.status,
         decision_source=decision_source
     )
 
