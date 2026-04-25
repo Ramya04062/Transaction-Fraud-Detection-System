@@ -1,3 +1,4 @@
+#model_server.py
 import os
 import joblib
 import numpy as np
@@ -7,9 +8,7 @@ from sentence_transformers import SentenceTransformer, util
 
 load_dotenv()
 
-# =========================
 # Paths & Config
-# =========================
 
 BASE_DIR = os.getenv(
     "MODEL_DIR",
@@ -26,9 +25,8 @@ SCALER_PATH = os.path.join(
     os.getenv("SCALER_FILE", "scaler.pkl")
 )
 
-# =========================
+
 # ML Feature Set
-# =========================
 
 EXPECTED_FEATURES = [
     'step',
@@ -42,17 +40,14 @@ EXPECTED_FEATURES = [
     'type_TRANSFER',
 ]
 
-# =========================
+
 # Confidence Thresholds
-# =========================
 
 HIGH_FRAUD_THRESHOLD = 0.9
 LOW_FRAUD_THRESHOLD = 0.05
 FINAL_DECISION_THRESHOLD = 0.5
 
-# =========================
 # MiniLM Config
-# =========================
 
 MINILM_MODEL_NAME = "all-MiniLM-L6-v2"
 
@@ -67,9 +62,7 @@ KNOWN_FRAUD_TEXTS = [
     "otp request from unknown person",
 ]
 
-# =========================
 # Model Server
-# =========================
 
 class ModelServer:
     def __init__(self,
@@ -88,10 +81,8 @@ class ModelServer:
 
         self.load_models()
 
-    # =========================
     # Load Models
-    # =========================
-
+    
     def load_models(self):
         if not os.path.exists(self.model_path):
             raise FileNotFoundError(f"Model not found at {self.model_path}")
@@ -113,9 +104,7 @@ class ModelServer:
         print(f"[ModelServer] Loaded ML model: {self.version}")
         print("[ModelServer] Loaded MiniLM encoder locally")
 
-    # =========================
     # ML Prediction
-    # =========================
 
     def predict_proba(self, X_df: pd.DataFrame):
         missing = set(EXPECTED_FEATURES) - set(X_df.columns)
@@ -127,9 +116,7 @@ class ModelServer:
 
         return self.model.predict_proba(X_scaled)
 
-    # =========================
     # MiniLM Similarity
-    # =========================
 
     def llm_similarity_score(self, text: str) -> float:
         """
@@ -152,9 +139,7 @@ class ModelServer:
 
         return float(similarity_scores.max())
 
-    # =========================
     # Ensemble Decision Logic
-    # =========================
 
     def predict_with_uncertainty(self,
                                  X_df: pd.DataFrame,
@@ -186,6 +171,7 @@ class ModelServer:
             }
 
         # -------- Uncertain Case → MiniLM --------
+
         print("[FLOW] ML uncertain → invoking MiniLM")
         llm_score = self.llm_similarity_score(transaction_text)
         

@@ -14,7 +14,6 @@ from app.models import Admin
 from app.utils.security import verify_password
 from app.db import SessionLocal
 from app.models import Admin
-#from app.utils.security import hash_password
 from fastapi import status
 import logging
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,11 +63,8 @@ def admin_login(payload: AdminLoginIn, db: Session = Depends(get_db)):
         message="Login successful"
     )
 
-
-
-# -----------------------------------------------------------
 # /transactions  <-- simulator posts here
-# -----------------------------------------------------------
+
 @app.post("/transactions", response_model=PredictionOut)
 def ingest_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
 
@@ -80,7 +76,7 @@ def ingest_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(sender)
 
-    # 1️⃣ Save transaction
+    # Save transaction
     db_tx = Transaction(
         step=tx.step,
         sender_id=tx.sender_id,
@@ -104,7 +100,7 @@ def ingest_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_tx)
 
-    # 2️⃣ DB → DataFrame
+    # DB → DataFrame
     df = pd.DataFrame([{
         "step": tx.step,
         "transaction_type": db_tx.transaction_type,
@@ -119,10 +115,10 @@ def ingest_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
     if 'step' not in df.columns:
         df['step'] = 0  # or use a timestamp/sequence
 
-    # 3️⃣ Feature engineering
+    # Feature engineering
     X = build_features_df(df)
 
-    # 4️⃣ Model prediction
+    # Model prediction
     proba = model_server.predict_proba(X)
     fraud_score = float(proba[0][1])
 
@@ -148,7 +144,7 @@ def ingest_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
         decision_source = "ML + MiniLM"
 
 
-    # 5️⃣ Update DB with prediction
+    # Update DB with prediction
     db_tx.fraud_score = fraud_score
     db_tx.fraud_label = fraud_label
     db_tx.model_version = model_server.version
@@ -158,7 +154,7 @@ def ingest_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
 
     db.commit()
 
-    # 6️⃣ Response
+    # Response
     return PredictionOut(
         transaction_id=db_tx.transaction_id,
         status="BLOCKED" if fraud_label else "APPROVED",
@@ -168,8 +164,6 @@ def ingest_transaction(tx: TransactionIn, db: Session = Depends(get_db)):
         prediction_time=db_tx.prediction_time,
         decision_source=decision_source
     )
-
-
 
 @app.get("/admin/stats")
 def get_admin_stats(db: Session = Depends(get_db)):
@@ -284,14 +278,8 @@ def fraud_trends(db: Session = Depends(get_db)):
     
     return result
 
-
-
-
-
-
-# -----------------------------------------------------------
 # Run app
-# -----------------------------------------------------------
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
